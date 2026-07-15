@@ -1,0 +1,14 @@
+node_modules/
+.pnpm-store/
+coverage/
+.test-codex-home/
+*.log
+.DS_Store
+.env
+.env.*
+!.env.example
+playwright-report/
+blob-report/
+plugins/codex-project-memory/test-results/
+plugins/codex-project-memory/.env*
+plugins/codex-project-memory/tmp/

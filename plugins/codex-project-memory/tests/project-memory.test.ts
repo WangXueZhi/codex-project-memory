@@ -1,0 +1,324 @@
+import { execFileSync } from "node:child_process";
+import { randomUUID } from "node:crypto";
+import { existsSync, readFileSync, realpathSync, statSync, writeFileSync } from "node:fs";
+import path from "node:path";
+import { afterEach, describe, expect, test } from "vitest";
+import { ProjectMemoryError } from "../src/errors.js";
+import { createTestContext, initGitRepo, makeProject, writeProjectFile } from "./helpers.js";
+
+const cleanups: Array<() => void> = [];
+
+afterEach(() => {
+  while (cleanups.length > 0) {
+    cleanups.pop()?.();
+  }
+});
+
+describe("project identity", () => {
+  test("registers a non-git project only after an explicit call", () => {
+    const context = createTestContext();
+    cleanups.push(context.cleanup);
+    const projectPath = makeProject(context.root, "plain-project");
+
+    const detected = context.service.detectProject(projectPath);
+    expect(detected.isGit).toBe(false);
+    expect(detected.registeredProject).toBeNull();
+
+    const registered = context.service.registerProject(projectPath);
+    expect(registered.name).toBe("plain-project");
+    expect(context.service.detectProject(projectPath).registeredProject?.id).toBe(registered.id);
+  });
+
+  test("recognizes git worktrees as relocation candidates instead of merging silently", () => {
+    const context = createTestContext();
+    cleanups.push(context.cleanup);
+    const repo = makeProject(context.root, "repo");
+    const worktree = path.join(context.root, "repo-worktree");
+    initGitRepo(repo);
+    const registered = context.service.registerProject(repo);
+    execFileSync("git", ["worktree", "add", "-b", "feature", worktree], {
+      cwd: repo,
+      stdio: "ignore",
+    });
+
+    const detected = context.service.detectProject(worktree);
+    expect(detected.registeredProject).toBeNull();
+    expect(detected.relocationCandidates.map((candidate) => candidate.id)).toContain(registered.id);
+    expect(() => context.service.registerProject(worktree)).toThrowError(ProjectMemoryError);
+
+    const relinked = context.service.registerProject(worktree, undefined, registered.id);
+    expect(relinked.id).toBe(registered.id);
+    expect(relinked.primaryPath).toBe(realpathSync(worktree));
+  });
+});
+
+describe("review-first memory lifecycle", () => {
+  test("stores multiple citations and evaluates staleness per source", () => {
+    const context = createTestContext();
+    cleanups.push(context.cleanup);
+    const projectPath = makeProject(context.root, "citation-project");
+    writeProjectFile(projectPath, "data/report.csv", "sku,sessions\na,100\n");
+    writeProjectFile(projectPath, "reports/diagnosis.md", "# Diagnosis\nTraffic declined.\n");
+    const project = context.service.registerProject(projectPath);
+    const proposal = context.service.proposeMemory(project.id, [
+      {
+        kind: "status",
+        title: "Traffic diagnosis",
+        summary: "Traffic declined in the verified period.",
+        topic: "First batch diagnosis",
+        content: "The traffic decline is supported by the report and source data.",
+        citations: [
+          { sourcePath: "data/report.csv", role: "evidence", locator: "row a" },
+          { sourcePath: "reports/diagnosis.md", role: "report", note: "Readable diagnosis" },
+        ],
+      },
+    ]) as { id: string; items: Array<{ id: string }> };
+    const memory = context.service.commitMemory(proposal.id, [proposal.items[0]?.id ?? ""])
+      .memories[0];
+
+    expect(memory?.citations).toHaveLength(2);
+    expect(memory?.citations.every((citation) => citation.stale === false)).toBe(true);
+    writeProjectFile(projectPath, "data/report.csv", "sku,sessions\na,80\n");
+    const refreshed = context.service.getContext(project.id)[0];
+    expect(refreshed?.stale).toBe(true);
+    expect(refreshed?.citations.filter((citation) => citation.stale)).toHaveLength(1);
+    expect(refreshed?.citations[0]?.staleReason).toBe("source_file_changed");
+
+    expect(() =>
+      context.service.proposeMemory(project.id, [
+        {
+          kind: "status",
+          title: "Duplicate sources",
+          content: "Duplicate citations must be rejected.",
+          citations: [
+            { sourcePath: "reports/diagnosis.md", role: "report" },
+            { sourcePath: "reports/diagnosis.md", role: "report" },
+          ],
+        },
+      ]),
+    ).toThrowError(/Duplicate memory citation/);
+  });
+
+  test("reviews enrichment updates without replacing title or content", () => {
+    const context = createTestContext();
+    cleanups.push(context.cleanup);
+    const projectPath = makeProject(context.root, "update-project");
+    writeProjectFile(projectPath, "reports/final.md", "# Final report\n");
+    const project = context.service.registerProject(projectPath);
+    const createdProposal = context.service.proposeMemory(project.id, [
+      { kind: "status", title: "Original title", content: "Original durable content." },
+      { kind: "status", title: "Unchanged title", content: "Unchanged durable content." },
+    ]) as { id: string; items: Array<{ id: string }> };
+    const created = context.service.commitMemory(
+      createdProposal.id,
+      createdProposal.items.map((item) => item.id),
+    ).memories;
+    const memory = created[0];
+    const unchanged = created[1];
+    const updateProposal = context.service.proposeMemory(
+      project.id,
+      [],
+      [],
+      [
+        {
+          memoryId: memory?.id ?? "",
+          summary: "Readable summary",
+          topic: "Release",
+          citations: [{ sourcePath: "reports/final.md", role: "report" }],
+        },
+        {
+          memoryId: unchanged?.id ?? "",
+          summary: "This update is not accepted",
+          topic: "Dropped",
+        },
+      ],
+    ) as { id: string; updateItems: Array<{ id: string }> };
+    const result = context.service.commitMemory(
+      updateProposal.id,
+      [],
+      [],
+      [updateProposal.updateItems[0]?.id ?? ""],
+    );
+
+    expect(result.updatedMemories).toHaveLength(1);
+    expect(result.updatedMemories[0]).toMatchObject({
+      title: "Original title",
+      content: "Original durable content.",
+      summary: "Readable summary",
+      topic: "Release",
+    });
+    expect(result.updatedMemories[0]?.citations).toHaveLength(1);
+    expect(
+      context.service.getContext(project.id).find((item) => item.id === unchanged?.id),
+    ).toMatchObject({
+      summary: null,
+      topic: null,
+    });
+    expect(context.service.store.getProposal(updateProposal.id)?.updateItems).toMatchObject([
+      { status: "accepted" },
+      { status: "rejected", rejectionReason: "not_accepted" },
+    ]);
+  });
+
+  test("reads legacy memory v1 and writes v2 only after an accepted update", () => {
+    const context = createTestContext();
+    cleanups.push(context.cleanup);
+    const projectPath = makeProject(context.root, "legacy-project");
+    const project = context.service.registerProject(projectPath);
+    const memoryId = randomUUID();
+    const memoryPath = path.join(context.dataDir, "projects", project.id, "MEMORY.md");
+    const metadata = {
+      schemaVersion: 1,
+      projectId: project.id,
+      memories: [
+        {
+          id: memoryId,
+          projectId: project.id,
+          kind: "status",
+          title: "Legacy memory",
+          tags: [],
+          sourceProjectId: null,
+          sourcePath: null,
+          sourceCommit: null,
+          sourceFileHash: null,
+          confidence: "observed",
+          status: "active",
+          createdAt: "2026-01-01T00:00:00.000Z",
+          updatedAt: "2026-01-01T00:00:00.000Z",
+        },
+      ],
+    };
+    writeFileSync(
+      memoryPath,
+      `---\n${JSON.stringify(metadata, null, 2)}\n---\n\n# Project Memory\n\n## [${memoryId}] Legacy memory\n\nLegacy content.\n`,
+    );
+    expect(context.service.getContext(project.id)[0]).toMatchObject({
+      summary: null,
+      topic: null,
+      citations: [],
+    });
+    expect(readFileSync(memoryPath, "utf8")).toContain('"schemaVersion": 1');
+
+    const proposal = context.service.proposeMemory(
+      project.id,
+      [],
+      [],
+      [{ memoryId, summary: "Legacy summary", topic: "Legacy" }],
+    ) as { id: string; updateItems: Array<{ id: string }> };
+    context.service.commitMemory(proposal.id, [], [], [proposal.updateItems[0]?.id ?? ""]);
+    expect(readFileSync(memoryPath, "utf8")).toContain('"schemaVersion": 2');
+  });
+
+  test("keeps proposals out of search until accepted and marks changed sources stale", () => {
+    const context = createTestContext();
+    cleanups.push(context.cleanup);
+    const projectAPath = makeProject(context.root, "project-a");
+    const projectBPath = makeProject(context.root, "project-b");
+    writeProjectFile(projectAPath, "src/fact.ts", "export const sharedFact = 'alpha';\n");
+    const projectA = context.service.registerProject(projectAPath);
+    const projectB = context.service.registerProject(projectBPath);
+    context.service.linkProjects(projectB.id, projectA.id);
+
+    const proposal = context.service.proposeMemory(projectB.id, [
+      {
+        kind: "architecture",
+        title: "Shared fact comes from project A",
+        content: "Project B reads the shared alpha fact from project A.",
+        tags: ["shared", "alpha"],
+        sourceProjectId: projectA.id,
+        sourcePath: "src/fact.ts",
+        confidence: "verified",
+      },
+    ]) as { id: string; items: Array<{ id: string }> };
+
+    expect(context.service.searchMemory(projectB.id, "alpha")).toEqual([]);
+    const committed = context.service.commitMemory(proposal.id, [proposal.items[0]?.id ?? ""]);
+    expect(committed.memories).toHaveLength(1);
+    expect(context.service.searchMemory(projectB.id, "alpha")[0]?.stale).toBe(false);
+
+    writeProjectFile(projectAPath, "src/fact.ts", "export const sharedFact = 'beta';\n");
+    const stale = context.service.getContext(projectB.id)[0];
+    expect(stale?.stale).toBe(true);
+    expect(stale?.staleReason).toBe("source_file_changed");
+  });
+
+  test("rejects suspected secrets before creating a proposal", () => {
+    const context = createTestContext();
+    cleanups.push(context.cleanup);
+    const projectPath = makeProject(context.root, "secret-project");
+    const project = context.service.registerProject(projectPath);
+
+    expect(() =>
+      context.service.proposeMemory(project.id, [
+        {
+          kind: "status",
+          title: "Temporary credential",
+          content: "api_key = 'example_credential_value_1234'",
+        },
+      ]),
+    ).toThrowError(/Potential secret/);
+  });
+
+  test("supports file-backed search, export, rejection, and permanent forgetting", () => {
+    const context = createTestContext();
+    cleanups.push(context.cleanup);
+    const projectPath = makeProject(context.root, "memory-project");
+    const project = context.service.registerProject(projectPath);
+    const rejected = context.service.proposeMemory(project.id, [
+      { kind: "status", title: "Transient status", content: "Release is waiting." },
+    ]) as { id: string };
+    context.service.rejectMemory(rejected.id);
+
+    const proposal = context.service.proposeMemory(project.id, [
+      {
+        kind: "workflow",
+        title: "Verification command",
+        content: "Run pnpm test before reporting completion.",
+        tags: ["verification"],
+      },
+    ]) as { id: string; items: Array<{ id: string }> };
+    const [memory] = context.service.commitMemory(proposal.id, [
+      proposal.items[0]?.id ?? "",
+    ]).memories;
+    expect(context.service.searchMemory(project.id, "verification")).toHaveLength(1);
+    expect((context.service.store.exportProject(project.id).memories as unknown[]).length).toBe(1);
+    expect(context.service.store.forgetMemories(project.id, [memory?.id ?? ""])).toEqual([
+      memory?.id,
+    ]);
+    expect(context.service.getContext(project.id)).toEqual([]);
+  });
+
+  test("stores approved memories as private Markdown outside the project", () => {
+    const context = createTestContext();
+    cleanups.push(context.cleanup);
+    const projectPath = makeProject(context.root, "markdown-project");
+    const project = context.service.registerProject(projectPath);
+    const proposal = context.service.proposeMemory(project.id, [
+      {
+        kind: "decision",
+        title: "External storage",
+        content: "Keep durable memory outside the registered project.",
+        tags: ["storage"],
+      },
+    ]) as { id: string; items: Array<{ id: string }> };
+
+    context.service.commitMemory(proposal.id, [proposal.items[0]?.id ?? ""]);
+
+    const memoryPath = path.join(context.dataDir, "projects", project.id, "MEMORY.md");
+    expect(existsSync(memoryPath)).toBe(true);
+    expect(existsSync(path.join(context.dataDir, "memory.sqlite3"))).toBe(false);
+    expect(existsSync(path.join(projectPath, "MEMORY.md"))).toBe(false);
+    expect(readFileSync(memoryPath, "utf8")).toContain(
+      "Keep durable memory outside the registered project.",
+    );
+    if (process.platform !== "win32") {
+      expect(statSync(memoryPath).mode & 0o777).toBe(0o600);
+    }
+    expect(context.service.store.doctor()).toMatchObject({
+      ok: true,
+      storageFormat: "markdown-json",
+      memorySchemaVersion: 2,
+      counts: { projects: 1, memories: 1, pendingProposals: 0 },
+    });
+  });
+});

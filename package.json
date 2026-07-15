@@ -1,0 +1,28 @@
+{
+  "name": "codex-project-memory-workspace",
+  "version": "0.9.0",
+  "private": true,
+  "homepage": "https://github.com/WangXueZhi/codex-project-memory#readme",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/WangXueZhi/codex-project-memory.git"
+  },
+  "bugs": {
+    "url": "https://github.com/WangXueZhi/codex-project-memory/issues"
+  },
+  "packageManager": "pnpm@10.30.2",
+  "engines": {
+    "node": ">=22.13.0"
+  },
+  "scripts": {
+    "build": "pnpm --dir plugins/codex-project-memory build",
+    "check": "pnpm typecheck && pnpm lint && pnpm test && pnpm build && pnpm test:integration && pnpm validate",
+    "format": "pnpm --dir plugins/codex-project-memory format",
+    "lint": "pnpm --dir plugins/codex-project-memory lint",
+    "test": "pnpm --dir plugins/codex-project-memory test",
+    "test:integration": "pnpm --dir plugins/codex-project-memory test:integration",
+    "test:visual": "pnpm --dir plugins/codex-project-memory test:visual",
+    "typecheck": "pnpm --dir plugins/codex-project-memory typecheck",
+    "validate": "node scripts/validate-project.mjs"
+  }
+}

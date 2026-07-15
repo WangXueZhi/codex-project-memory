@@ -1,0 +1,39 @@
+{
+  "name": "codex-project-memory",
+  "version": "0.9.0+codex.20260714123515",
+  "description": "Local project memory with structured review, source citations, and a guide-first offline knowledge graph.",
+  "author": {
+    "name": "WangXueZhi",
+    "url": "https://github.com/WangXueZhi"
+  },
+  "homepage": "https://github.com/WangXueZhi/codex-project-memory",
+  "repository": "https://github.com/WangXueZhi/codex-project-memory",
+  "license": "Apache-2.0",
+  "keywords": [
+    "memory",
+    "projects",
+    "context",
+    "knowledge-graph",
+    "skill"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Codex Project Memory",
+    "shortDescription": "Durable local memory for each Codex project.",
+    "longDescription": "Keep private project memories separate, trace claims to validated source files, review durable updates, and understand them through a guided offline knowledge workspace with optional graph exploration.",
+    "developerName": "WangXueZhi",
+    "category": "Productivity",
+    "capabilities": [
+      "Local",
+      "Read",
+      "Write"
+    ],
+    "defaultPrompt": [
+      "Load this project's saved context before we continue.",
+      "Propose durable memories from the work we just finished.",
+      "Guide me through this project's saved knowledge and current gaps.",
+      "Show the offline knowledge graph and suggested exploration questions.",
+      "Link another project for read-only reference."
+    ]
+  }
+}
