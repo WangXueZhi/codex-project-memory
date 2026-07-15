@@ -2,15 +2,28 @@
 
 English | [简体中文](architecture.zh-CN.md)
 
+This document explains how the plugin works internally. The short version is:
+
+1. The **Skill** tells Codex when to load memory and how to ask about saving it.
+2. The **CLI** reads and writes the local files and enforces access rules.
+3. The **Stop Hook** checks that a finished task did not leave a save proposal unresolved.
+4. The **offline browser** turns saved memories into a guide, graph, and reading view.
+
+All four parts run locally. They do not need a database server, MCP server, or cloud service.
+
 ## Components
 
-The repository is a Codex marketplace containing one self-contained plugin. The plugin bundles a
-concise Skill, a local CLI, and a Stop Hook. The CLI owns deterministic storage and access checks;
-the Skill owns the interactive-or-automatic completion policy. No MCP server is required.
+The repository is a Codex marketplace containing one self-contained plugin. The Skill describes
+the workflow in plain instructions for Codex. The CLI performs predictable file operations and
+security checks. The Stop Hook runs when a tool-using task is about to finish and makes sure the
+memory save decision was handled. No MCP server is required.
 
 ## Project Identity
 
-Registration starts from a canonical filesystem path. Git repositories also record their worktree common directory, origin URL, and current commit as relocation hints. A new path that resembles an existing project is returned as a candidate and is never merged without confirmation.
+Registration starts from the real, normalized project path. For Git repositories, the plugin also
+records the shared worktree directory, remote URL, and current commit. These values help recognize
+a project after it moves or when it is opened through another worktree. A similar path is only
+shown as a possible match; the plugin never merges it with an existing project without approval.
 
 ## Storage
 
@@ -19,11 +32,12 @@ All plugin state lives outside registered projects under `CODEX_HOME/project-mem
 project has a private directory containing `project.json`, approved `MEMORY.md`, pending or reviewed
 proposal JSON files, reviewed `RELATIONS.json` graph edges, and an append-only `audit.jsonl`.
 
-Approved memory content is stored in Markdown with structured JSON front matter. Memory document
+Approved memory content is stored in Markdown with a small structured JSON header. Memory document
 v2 adds optional summaries, topics, and multiple validated citations; v1 remains readable and is
 rewritten only after an accepted memory or enrichment commit. Writes use a
-private temporary file followed by an atomic rename. Directories use mode `0700` and state files use
-mode `0600` where the platform supports POSIX permissions.
+private temporary file followed by a single replacement operation, so an interrupted write is less
+likely to leave half a file. Directories use mode `0700` and state files use mode `0600` on systems
+that support POSIX permissions, which means only the current user can access them.
 
 Memory proposals and active memory remain intentionally separate. The Skill's `propose` command
 writes a pending proposal file. When structured user input is available, `commit` or `reject`
@@ -34,16 +48,18 @@ directly and does not maintain a database index.
 
 ## Knowledge Graph
 
-Each approved memory UUID is a graph node. Typed edges are stored in the owning project's
+Each approved memory is a graph node. A node is simply one saved memory. An edge is a reviewed
+relationship between two memories. These edges are stored in the owning project's
 `RELATIONS.json`; missing relation files are treated as empty for backward compatibility. Supported
 edge types are related, depends on, supports, contradicts, supersedes, and derived from. Related and
-contradicts are symmetric; the other types are directed.
+contradicts work in both directions; the other types have a clear from/to direction.
 
 Relationship candidates share the memory proposal lifecycle. They may refer to existing memory IDs
 or stable candidate refs in the same proposal. They follow interactive selection when available and
 the save-all fallback otherwise.
 Normal memory loading and text search remain unchanged. The read-only `guide` analysis reports
-topics, formal connected components, isolated memories, evidence coverage, stale sources,
+topics, groups that are connected by reviewed relationships, memories with no relationships,
+evidence coverage, stale sources,
 highlights, suggested questions, and deterministic relationship clues. Clues are same-project
 `related_to` suggestions based only on reviewed metadata: shared citations, matching topics, and
 rare shared tags. Ubiquitous citations and tags are excluded; existing formal endpoint pairs are
@@ -51,11 +67,12 @@ suppressed. Clues are never stored, counted as formal relations, or used by trav
 explicitly converts selected clues through the existing proposal review flow.
 
 Neighbor, shortest-path, and bounded graph queries are explicit and can render JSON, Mermaid,
-grouped Markdown, or a private standalone HTML snapshot. The HTML workspace uses a build-time
-bundled Preact application and Cytoscape renderer.
-FCoSE provides the default force-directed immersive network while Dagre remains available as the
-hierarchical reading layout. JavaScript and CSS are embedded into the generated file with CSP
-content hashes; the page has no CDN, network request, server, or runtime plugin-resource dependency.
+grouped Markdown, or a private standalone HTML snapshot. The HTML workspace uses Preact for the
+interface and Cytoscape for the graph. Both are bundled during the build.
+FCoSE arranges related memories into natural clusters, while Dagre arranges them in a top-to-bottom
+reading order. JavaScript and CSS are embedded in the generated file. A Content Security Policy
+(CSP) allows only the embedded code whose hash matches the generated page. The page has no CDN,
+network request, server, or runtime plugin-resource dependency.
 
 The browser starts in a guide-first research workspace with project metrics, recommended reading,
 topic paths, evidence status, gaps, suggested questions, and pending relation clues. The optional
@@ -69,7 +86,8 @@ report, workflow, and reference nodes from memory metadata and connects them wit
 edges only when the selected memory is expanded. Invisible layout-only edges keep disconnected
 memories readable and never enter relation counts, traversal, storage, or exported graph data.
 
-Cross-project edges are owned by the current project, require at least one local endpoint, and are
+Cross-project relationships are owned by the current project, require at least one memory from that
+project, and are
 visible only while the existing directional project link grants read access to every foreign
 endpoint. Removing a project link suspends those edges without deleting them.
 

@@ -4,9 +4,17 @@ English | [简体中文](SECURITY.zh-CN.md)
 
 ## Trust Model
 
-Codex Project Memory is a local process with access to paths that the user explicitly registers. Cross-project access requires a directional link. The plugin does not provide cross-project writes and does not use the network.
+In simple terms, installing the plugin lets it read files inside projects that you explicitly
+register. It cannot read another registered project merely because that project exists. You must
+approve a one-way link first. The plugin does not provide cross-project writes and does not use the
+network.
 
-The plugin blocks common sensitive paths and file types, rejects parent traversal and symlink escapes, limits file sizes and search output, and rejects likely credentials in memory proposals. Plugin state stays outside registered projects. Storage directories use private permissions and file replacement is atomic where supported. These controls reduce risk but are not a substitute for keeping secrets outside source trees.
+The plugin blocks common secret files, rejects paths that try to leave the approved project, limits
+how much data one request can read, and rejects text that looks like a credential in a memory
+proposal. Plugin state stays outside registered projects. Private file permissions restrict access
+to the current user where the operating system supports them. File updates use a single replacement
+operation so an interrupted write is less likely to corrupt stored memory. These controls reduce
+risk, but real secrets should still be kept outside source trees.
 
 When Codex exposes `request_user_input`, the Skill asks whether to save all, select items, or skip.
 When that tool is unavailable, the configured fallback commits all proposed memories and
@@ -22,4 +30,6 @@ https://github.com/WangXueZhi/codex-project-memory/security/advisories/new
 
 ## Data Removal
 
-Use `memory_forget` for selected entries. To remove all plugin data, stop Codex and delete the configured project-memory data directory. Back up that directory first if recovery may be needed.
+Use the `forget` command for selected memories and `forget-relations` for selected relationships.
+To remove all plugin data, stop Codex and delete the configured project-memory data directory. Back
+up that directory first if recovery may be needed.
