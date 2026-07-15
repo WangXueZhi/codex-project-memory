@@ -1,2 +1,4 @@
+* text=auto eol=lf
+
 plugins/codex-project-memory/dist/** linguist-generated=true
 pnpm-lock.yaml linguist-generated=true
