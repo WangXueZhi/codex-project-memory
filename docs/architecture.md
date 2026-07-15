@@ -1,5 +1,7 @@
 # Architecture
 
+English | [简体中文](architecture.zh-CN.md)
+
 ## Components
 
 The repository is a Codex marketplace containing one self-contained plugin. The plugin bundles a

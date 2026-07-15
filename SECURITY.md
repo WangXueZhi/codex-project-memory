@@ -1,5 +1,7 @@
 # Security Policy
 
+English | [简体中文](SECURITY.zh-CN.md)
+
 ## Trust Model
 
 Codex Project Memory is a local process with access to paths that the user explicitly registers. Cross-project access requires a directional link. The plugin does not provide cross-project writes and does not use the network.

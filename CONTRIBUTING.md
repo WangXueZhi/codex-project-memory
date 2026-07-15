@@ -1,5 +1,7 @@
 # Contributing
 
+English | [简体中文](CONTRIBUTING.zh-CN.md)
+
 Use Node.js 22.13 or newer and pnpm 10.30.2.
 
 ```bash

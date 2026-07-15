@@ -1,5 +1,7 @@
 # Codex Project Memory
 
+English | [简体中文](README.zh-CN.md)
+
 Codex Project Memory is a local Codex plugin that keeps durable context separate for each project. It uses interactive memory review when Codex exposes structured input, an explicit automatic-save fallback otherwise, a file-backed knowledge graph, and explicit one-way links when one project needs to read another.
 
 [![CI](https://github.com/WangXueZhi/codex-project-memory/actions/workflows/ci.yml/badge.svg)](https://github.com/WangXueZhi/codex-project-memory/actions/workflows/ci.yml)
@@ -116,7 +118,8 @@ assets, so the user-facing snapshot remains one private offline file.
 - Existing `memory.sqlite3` files from pre-0.2 development builds are left untouched and are not
   imported automatically.
 
-See [Architecture](docs/architecture.md) and [Security](SECURITY.md) for design and trust boundaries.
+See [Architecture](docs/architecture.md), [Security](SECURITY.md), and
+[Contributing](CONTRIBUTING.md) for design, trust boundaries, and development guidance.
 
 ## License
 
