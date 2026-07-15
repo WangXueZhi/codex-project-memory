@@ -4,6 +4,12 @@ English | [简体中文](CHANGELOG.zh-CN.md)
 
 All notable changes to this project are documented in this file.
 
+## Unreleased
+
+- Added public plugin-directory metadata, brand assets, and product screenshots.
+- Added bilingual privacy, terms, support, and reviewer submission documents.
+- Added direct GitHub marketplace installation instructions.
+
 ## 0.9.0 - 2026-07-14
 
 - Added the guide-first offline knowledge workspace.

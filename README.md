@@ -108,6 +108,17 @@ to review and save them.
 
 ## Install From This Repository
 
+To install directly from the public GitHub marketplace:
+
+```bash
+codex plugin marketplace add WangXueZhi/codex-project-memory --ref main
+codex plugin add codex-project-memory@codex-project-memory
+```
+
+Restart Codex and start a new task after installation.
+
+For local development from a cloned checkout:
+
 ```bash
 git clone https://github.com/WangXueZhi/codex-project-memory.git
 cd codex-project-memory
@@ -117,8 +128,8 @@ codex plugin marketplace add "$PWD"
 codex plugin add codex-project-memory@codex-project-memory
 ```
 
-Start a new Codex task after installation. Invoke `@codex-project-memory` explicitly, or ask Codex
-to detect and load memory for the current project.
+Invoke `@codex-project-memory` explicitly, or ask Codex to detect and load memory for the current
+project.
 
 ## First Use
 
@@ -196,8 +207,9 @@ The distributable plugin lives in `plugins/codex-project-memory`. `pnpm build` b
 CLI, Stop Hook, and offline browser assets. Generated knowledge graph pages contain everything they
 need in one local file and make no runtime network requests.
 
-See [Architecture](docs/architecture.md), [Security](SECURITY.md), and
-[Contributing](CONTRIBUTING.md) for deeper technical details.
+See [Architecture](docs/architecture.md), [Security](SECURITY.md),
+[Privacy](PRIVACY.md), [Terms](TERMS.md), [Support](SUPPORT.md), and
+[Contributing](CONTRIBUTING.md) for more information.
 
 ## License
 

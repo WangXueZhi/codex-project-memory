@@ -95,6 +95,17 @@ HTML 不会一打开就把用户丢进一张难懂的关系网，而是先显示
 
 ## 从源码安装
 
+直接从公开 GitHub marketplace 安装：
+
+```bash
+codex plugin marketplace add WangXueZhi/codex-project-memory --ref main
+codex plugin add codex-project-memory@codex-project-memory
+```
+
+安装后重启 Codex 并新建任务。
+
+从克隆到本机的源码进行开发安装：
+
 ```bash
 git clone https://github.com/WangXueZhi/codex-project-memory.git
 cd codex-project-memory
@@ -104,8 +115,7 @@ codex plugin marketplace add "$PWD"
 codex plugin add codex-project-memory@codex-project-memory
 ```
 
-安装后新建一个 Codex 任务。可以显式调用 `@codex-project-memory`，也可以让 Codex 检测并
-加载当前项目的记忆。
+可以显式调用 `@codex-project-memory`，也可以让 Codex 检测并加载当前项目的记忆。
 
 ## 第一次使用
 
@@ -181,8 +191,9 @@ pnpm test:visual
 可分发插件位于 `plugins/codex-project-memory`。`pnpm build` 会打包 Skill CLI、Stop Hook 和
 离线浏览器资源。生成的知识图谱将所有资源放在一个本地文件中，运行时不会访问网络。
 
-更深入的技术说明请查看[架构说明](docs/architecture.zh-CN.md)、
-[安全策略](SECURITY.zh-CN.md)和[贡献指南](CONTRIBUTING.zh-CN.md)。
+更多信息请查看[架构说明](docs/architecture.zh-CN.md)、[安全策略](SECURITY.zh-CN.md)、
+[隐私政策](PRIVACY.zh-CN.md)、[使用条款](TERMS.zh-CN.md)、[支持](SUPPORT.zh-CN.md)和
+[贡献指南](CONTRIBUTING.zh-CN.md)。
 
 ## 许可证
 

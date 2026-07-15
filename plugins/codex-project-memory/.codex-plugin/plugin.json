@@ -1,6 +1,6 @@
 {
   "name": "codex-project-memory",
-  "version": "0.9.0+codex.20260714123515",
+  "version": "0.9.0+codex.20260715052103",
   "description": "Local project memory with structured review, source citations, and a guide-first offline knowledge graph.",
   "author": {
     "name": "WangXueZhi",
@@ -19,8 +19,8 @@
   "skills": "./skills/",
   "interface": {
     "displayName": "Codex Project Memory",
-    "shortDescription": "Durable local memory for each Codex project.",
-    "longDescription": "Keep private project memories separate, trace claims to validated source files, review durable updates, and understand them through a guided offline knowledge workspace with optional graph exploration.",
+    "shortDescription": "Private, traceable long-term memory for each Codex project.",
+    "longDescription": "Keep project decisions, verified conclusions, workflows, and evidence in a private local store outside Git. Review what is saved, detect stale source files, allow explicit one-way cross-project reads, and explore knowledge through a guide-first offline workspace.",
     "developerName": "WangXueZhi",
     "category": "Productivity",
     "capabilities": [
@@ -28,12 +28,21 @@
       "Read",
       "Write"
     ],
+    "websiteURL": "https://github.com/WangXueZhi/codex-project-memory",
+    "privacyPolicyURL": "https://github.com/WangXueZhi/codex-project-memory/blob/main/PRIVACY.md",
+    "termsOfServiceURL": "https://github.com/WangXueZhi/codex-project-memory/blob/main/TERMS.md",
     "defaultPrompt": [
-      "Load this project's saved context before we continue.",
+      "Load this project's saved memory and flag anything stale.",
       "Propose durable memories from the work we just finished.",
-      "Guide me through this project's saved knowledge and current gaps.",
-      "Show the offline knowledge graph and suggested exploration questions.",
-      "Link another project for read-only reference."
+      "Guide me through this project's saved knowledge and evidence."
+    ],
+    "brandColor": "#22D3EE",
+    "composerIcon": "./assets/icon.png",
+    "logo": "./assets/logo.png",
+    "logoDark": "./assets/logo-dark.png",
+    "screenshots": [
+      "./assets/knowledge-guide.png",
+      "./assets/knowledge-graph.png"
     ]
   }
 }

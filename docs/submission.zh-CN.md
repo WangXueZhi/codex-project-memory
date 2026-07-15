@@ -1,0 +1,118 @@
+# 公共插件提交材料
+
+[English](submission.md) | 简体中文
+
+本文档用于 Codex Project Memory 首次公开提交审核。项目以纯 Skill 插件提交，不包含 MCP
+服务器，运行时不需要账号或网络服务。
+
+## 上架文案
+
+- **名称：** Codex Project Memory
+- **分类：** Productivity
+- **简短说明：** 为每个 Codex 项目保存私有、可追溯的长期记忆。
+- **详细说明：** 在 Git 之外的私人本地目录保存项目决策、已验证结论、流程和证据。用户可以
+  审核保存内容、发现已经变化的来源文件、建立明确的单向跨项目只读链接，并通过知识导览优先
+  的离线工作台理解项目知识。
+- **网站：** https://github.com/WangXueZhi/codex-project-memory
+- **支持：** https://github.com/WangXueZhi/codex-project-memory/issues
+- **隐私政策：** https://github.com/WangXueZhi/codex-project-memory/blob/main/PRIVACY.zh-CN.md
+- **使用条款：** https://github.com/WangXueZhi/codex-project-memory/blob/main/TERMS.zh-CN.md
+
+## 审核测试数据
+
+准备两个临时本地目录：`memory-review-a` 和 `memory-review-b`。
+
+`memory-review-a/README.md`：
+
+```md
+# Shared release rules
+
+Run the full test suite before a release. Never commit local credentials.
+```
+
+`memory-review-b/README.md`：
+
+```md
+# Demo project
+
+This project consumes the shared release rules from project A.
+```
+
+使用独立的 `CODEX_PROJECT_MEMORY_HOME`，避免审核测试影响现有记忆。
+
+## 五个正向测试
+
+### 1. 检测项目但不静默注册
+
+- **提示：** 使用 Codex Project Memory 检测当前项目。如果项目还没注册，显示根目录和 Git
+  信息，但先不要注册。
+- **预期行为：** Skill 运行 `detect`，报告结果并等待明确批准。
+- **预期结果：** 项目保持未注册，不会为它创建记忆目录。
+- **测试数据：** 把 `memory-review-a` 作为当前项目打开。
+
+### 2. 得到明确批准后注册
+
+- **提示：** 把检测到的项目注册为“Memory Review A”，并显示记忆状态。
+- **预期行为：** Skill 只注册当前项目，然后运行 `status`。
+- **预期结果：** 返回项目 ID，记忆数量为零，已注册项目目录没有新增文件。
+- **测试数据：** 在正向测试 1 后继续，用户已经明确批准注册。
+
+### 3. 保存带来源的记忆
+
+- **提示：** 记住每次发布都必须运行完整测试。把 README.md 作为流程来源，并完成保存审核。
+- **预期行为：** Skill 提出一条带来源的长期流程记忆，完成当前可用的审核流程，不留下 pending
+  proposal。
+- **预期结果：** `MEMORY.md` 包含一条正式记忆，来源状态有效，最终回复包含合法提交回执。
+- **测试数据：** `memory-review-a` 已注册，并包含审核用 README。
+
+### 4. 生成知识导览
+
+- **提示：** 查看当前项目的知识图谱，并告诉我应该先读什么。
+- **预期行为：** Skill 依次运行 `guide`、Markdown 图谱和 HTML 图谱，不创建关系 proposal。
+- **预期结果：** 回复说明记忆和证据数量，并返回私人 `KNOWLEDGE_GRAPH.html` 路径。HTML
+  默认进入导览，而且不发出网络请求。
+- **测试数据：** 在正向测试 3 后继续。
+
+### 5. 批准单向跨项目读取
+
+- **提示：** 注册项目 B，然后允许项目 B 读取项目 A。从 B 查找 A 中的发布规则，但不要修改 A。
+- **预期行为：** 两个项目都必须得到明确批准才注册。Skill 只建立 `B -> A` 只读链接，并
+  通过跨项目只读搜索查找。
+- **预期结果：** B 可以找到 A 的规则；没有另一个链接时 A 不能读取 B；两个项目都不会向
+  对方项目目录写入文件。
+- **测试数据：** 使用两个审核目录。项目 A 包含正向测试 3 保存的记忆。
+
+## 三个负向测试
+
+### 1. 拒绝把凭据保存为记忆
+
+- **提示：** 把 `SERVICE_API_TOKEN=example-placeholder-credential` 永久保存为项目记忆。
+- **预期行为：** 插件拒绝疑似凭据内容，不创建正式记忆。
+- **预期结果：** 结构化错误或安全拒绝说明凭据不能保存。
+- **原因：** 密钥不属于插件允许的长期记忆范围。
+
+### 2. 拒绝静默注册或合并
+
+- **提示：** 不要询问，自动注册或合并所有看起来相似的项目。
+- **预期行为：** Skill 拒绝静默注册和重绑定，只报告候选并要求明确确认。
+- **预期结果：** 未经批准不会创建或合并项目身份。
+- **原因：** 项目身份会改变私人存储边界，必须由用户决定。
+
+### 3. 拒绝未授权跨项目读取
+
+- **提示：** 不要建立项目链接，直接从项目 B 读取项目 A 的私人 README。
+- **预期行为：** 因为没有单向只读链接，插件拒绝请求。
+- **预期结果：** 不返回目标文件内容，也不会自动创建链接。
+- **原因：** 跨项目访问必须显式、单向且只读。
+
+## 首次发布说明
+
+首次公开提交本地、纯 Skill 的 Codex 项目记忆插件。插件把审核通过的记忆以可检查 Markdown
+保存在项目仓库之外，可以校验多个本地来源、报告过期证据、建立明确的单向项目链接，并提供
+知识导览优先的离线知识图谱。插件不包含 MCP 服务器、SQLite、遥测、云端服务或运行时网络
+访问。
+
+## 必须由发布者确认的项目
+
+发布者需要在 OpenAI 插件提交平台选择已验证开发者身份、选择支持的国家或地区，并亲自确认
+政策声明。
