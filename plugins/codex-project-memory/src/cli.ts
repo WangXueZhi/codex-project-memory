@@ -1,5 +1,6 @@
 import { spawnSync } from "node:child_process";
 import { readFileSync } from "node:fs";
+import { pathToFileURL } from "node:url";
 import { normalizeError, ProjectMemoryError } from "./errors.js";
 import { ensureDataDir, resolveDataDir } from "./paths.js";
 import { ProjectMemoryService } from "./service.js";
@@ -332,7 +333,7 @@ export function runCommand(argv: string[]): unknown {
   }
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   try {
     const result = runCommand(process.argv.slice(2));
     process.stdout.write(

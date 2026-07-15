@@ -2252,6 +2252,7 @@ var require_ignore = __commonJS({
 // src/cli.ts
 import { spawnSync } from "child_process";
 import { readFileSync as readFileSync5 } from "fs";
+import { pathToFileURL as pathToFileURL2 } from "url";
 
 // src/errors.ts
 var ProjectMemoryError = class extends Error {
@@ -5203,7 +5204,7 @@ function runCommand(argv) {
     service.store.close();
   }
 }
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (process.argv[1] && import.meta.url === pathToFileURL2(process.argv[1]).href) {
   try {
     const result = runCommand(process.argv.slice(2));
     process.stdout.write(

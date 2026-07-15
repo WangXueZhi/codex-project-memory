@@ -2251,6 +2251,7 @@ var require_ignore = __commonJS({
 
 // src/hook-stop.ts
 import { existsSync as existsSync5, readFileSync as readFileSync5 } from "fs";
+import { pathToFileURL as pathToFileURL2 } from "url";
 
 // src/paths.ts
 var import_picomatch = __toESM(require_picomatch2(), 1);
@@ -4962,7 +4963,7 @@ function main() {
     service.store.close();
   }
 }
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (process.argv[1] && import.meta.url === pathToFileURL2(process.argv[1]).href) {
   try {
     main();
   } catch {

@@ -1,4 +1,5 @@
 import { existsSync, readFileSync } from "node:fs";
+import { pathToFileURL } from "node:url";
 import { ensureDataDir, resolveDataDir } from "./paths.js";
 import { ProjectMemoryService } from "./service.js";
 import { MemoryStore } from "./store.js";
@@ -94,7 +95,7 @@ function main(): void {
   }
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   try {
     main();
   } catch {
