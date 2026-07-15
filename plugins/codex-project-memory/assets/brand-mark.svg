@@ -1,47 +1,25 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" role="img" aria-labelledby="title desc">
   <title id="title">Codex Project Memory brand mark</title>
-  <desc id="desc">A central memory core connected to five project knowledge nodes.</desc>
-  <defs>
-    <filter id="glow" x="-80%" y="-80%" width="260%" height="260%">
-      <feGaussianBlur stdDeviation="18" result="blur"/>
-      <feMerge>
-        <feMergeNode in="blur"/>
-        <feMergeNode in="SourceGraphic"/>
-      </feMerge>
-    </filter>
-  </defs>
+  <desc id="desc">A minimal memory card connected to three knowledge nodes.</desc>
   <rect width="1024" height="1024" fill="#07111a"/>
-  <g fill="none" stroke="#163342" stroke-width="2" opacity="0.5">
-    <path d="M128 256H896M128 512H896M128 768H896"/>
-    <path d="M256 128V896M512 128V896M768 128V896"/>
+  <g fill="none" stroke="#36cfe3" stroke-width="28" stroke-linecap="round">
+    <path d="M512 512V210"/>
+    <path d="M512 512L236 744"/>
+    <path d="M512 512L788 744"/>
   </g>
-  <g fill="none" stroke="#46dff5" stroke-width="16" stroke-linecap="round" opacity="0.7">
-    <path d="M512 426V228"/>
-    <path d="M438 460L286 314"/>
-    <path d="M586 460L738 314"/>
-    <path d="M438 564L286 710"/>
-    <path d="M586 564L738 710"/>
+  <g fill="#dffcff" stroke="#07111a" stroke-width="24">
+    <circle cx="512" cy="210" r="62"/>
+    <circle cx="236" cy="744" r="62"/>
+    <circle cx="788" cy="744" r="62"/>
   </g>
-  <g fill="#07111a" stroke="#7eeaff" stroke-width="18">
-    <circle cx="512" cy="196" r="42"/>
-    <circle cx="254" cy="284" r="42"/>
-    <circle cx="770" cy="284" r="42"/>
-    <circle cx="254" cy="740" r="42"/>
-    <circle cx="770" cy="740" r="42"/>
+  <g fill="#20bfd5">
+    <circle cx="512" cy="210" r="22"/>
+    <circle cx="236" cy="744" r="22"/>
+    <circle cx="788" cy="744" r="22"/>
   </g>
-  <g fill="#b9f7ff" filter="url(#glow)">
-    <circle cx="512" cy="196" r="18"/>
-    <circle cx="254" cy="284" r="18"/>
-    <circle cx="770" cy="284" r="18"/>
-    <circle cx="254" cy="740" r="18"/>
-    <circle cx="770" cy="740" r="18"/>
+  <path d="M512 326L698 512L512 698L326 512Z" fill="#102630" stroke="#e8fdff" stroke-width="38" stroke-linejoin="round"/>
+  <g fill="none" stroke-linecap="round">
+    <path d="M428 482H596" stroke="#36cfe3" stroke-width="34"/>
+    <path d="M428 554H548" stroke="#2ed7a0" stroke-width="28"/>
   </g>
-  <g stroke-linejoin="round">
-    <path d="M512 372L652 446L512 520L372 446Z" fill="#0d2733" stroke="#7eeaff" stroke-width="18"/>
-    <path d="M372 446V558L512 632L652 558V446L512 520Z" fill="#0a1c26" stroke="#39cfe7" stroke-width="18"/>
-    <path d="M372 516L512 590L652 516" fill="none" stroke="#34d399" stroke-width="16"/>
-    <path d="M512 520V632" fill="none" stroke="#7eeaff" stroke-width="14"/>
-  </g>
-  <circle cx="512" cy="512" r="54" fill="#f2fdff" stroke="#07111a" stroke-width="16" filter="url(#glow)"/>
-  <circle cx="512" cy="512" r="20" fill="#18c8dd"/>
 </svg>
