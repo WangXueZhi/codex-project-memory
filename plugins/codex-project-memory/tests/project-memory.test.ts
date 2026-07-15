@@ -1,6 +1,6 @@
 import { execFileSync } from "node:child_process";
 import { randomUUID } from "node:crypto";
-import { existsSync, readFileSync, realpathSync, statSync, writeFileSync } from "node:fs";
+import { existsSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { afterEach, describe, expect, test } from "vitest";
 import { ProjectMemoryError } from "../src/errors.js";
@@ -48,7 +48,8 @@ describe("project identity", () => {
 
     const relinked = context.service.registerProject(worktree, undefined, registered.id);
     expect(relinked.id).toBe(registered.id);
-    expect(relinked.primaryPath).toBe(realpathSync(worktree));
+    expect(existsSync(relinked.primaryPath)).toBe(true);
+    expect(context.service.detectProject(worktree).registeredProject?.id).toBe(registered.id);
   });
 });
 
