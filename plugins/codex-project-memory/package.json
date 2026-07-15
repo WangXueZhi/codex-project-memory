@@ -24,7 +24,7 @@
     "lint": "biome check .",
     "start": "node ./dist/project-memory.mjs help",
     "test": "pnpm build:browser && vitest run --exclude tests/integration/** --exclude tests/visual/**",
-    "test:integration": "pnpm build:browser && vitest run tests/integration/**",
+    "test:integration": "pnpm build:browser && vitest run tests/integration",
     "test:visual": "pnpm build && playwright test",
     "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.browser.json"
   },
