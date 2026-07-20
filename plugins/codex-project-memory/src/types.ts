@@ -129,6 +129,73 @@ export interface MemoryRecord {
   staleReason: string | null;
 }
 
+export type RecallQueryMode = "query" | "recent";
+export type RecallOmissionReason = "budget_exceeded" | "limit_exceeded";
+
+export interface RecallCandidate {
+  memoryId: string;
+  projectId: string;
+  projectName: string;
+  kind: MemoryKind;
+  title: string;
+  summary: string;
+  topic: string | null;
+  tags: string[];
+  confidence: Confidence;
+  score: number;
+  matchReasons: string[];
+  stale: boolean;
+  staleReason: string | null;
+  citationCount: number;
+  formalRelationCount: number;
+  updatedAt: string;
+  estimatedTokens: number;
+}
+
+export interface RecallOmission {
+  reason: RecallOmissionReason;
+  memoryIds: string[];
+}
+
+export interface RecallResult {
+  queryMode: RecallQueryMode;
+  query: string | null;
+  candidates: RecallCandidate[];
+  recommendedMemoryIds: string[];
+  estimatedTokens: number;
+  budgetTokens: number;
+  estimationNote: string;
+  omissions: RecallOmission[];
+}
+
+export interface RetrievedCitation {
+  sourceProjectId: string;
+  sourceProjectName: string;
+  sourcePath: string;
+  role: CitationRole;
+  locator: string | null;
+  note: string | null;
+  stale: boolean;
+  staleReason: string | null;
+  accessible: boolean;
+  fileUrl: string | null;
+}
+
+export interface RetrievedMemory
+  extends Omit<MemoryRecord, "sourceCommit" | "sourceFileHash" | "citations"> {
+  citations: RetrievedCitation[];
+  estimatedTokens: number;
+}
+
+export interface GetMemoriesResult {
+  memories: RetrievedMemory[];
+  omittedMemoryIds: string[];
+  omissions: RecallOmission[];
+  estimatedTokens: number;
+  budgetTokens: number;
+  estimationNote: string;
+}
+
 export interface ProposalItem {
   id: string;
   proposalId: string;

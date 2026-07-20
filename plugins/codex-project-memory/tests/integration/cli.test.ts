@@ -109,6 +109,33 @@ describe("Skill CLI", () => {
     const context = runCli(pluginRoot, dataDir, ["load", "--path", projectBPath]);
     expect(context.memories).toHaveLength(2);
     const committedMemories = committed.memories as Array<{ id: string }>;
+    const recalled = runCli(pluginRoot, dataDir, [
+      "recall",
+      "--path",
+      projectBPath,
+      "--query",
+      "shared protocol",
+    ]);
+    expect(recalled.queryMode).toBe("query");
+    expect(recalled.recommendedMemoryIds).toContain(committedMemories[0]?.id);
+    expect(recalled.candidates).toEqual(
+      expect.arrayContaining([expect.not.objectContaining({ content: expect.anything() })]),
+    );
+    expect(recalled.candidates).toEqual(
+      expect.arrayContaining([expect.not.objectContaining({ citations: expect.anything() })]),
+    );
+    const retrieved = runCli(pluginRoot, dataDir, [
+      "get",
+      "--path",
+      projectBPath,
+      "--memory-ids",
+      (recalled.recommendedMemoryIds as string[]).join(","),
+      "--budget-tokens",
+      "1700",
+    ]);
+    expect(retrieved.memories).toHaveLength(2);
+    expect(JSON.stringify(retrieved)).not.toContain("sourceFileHash");
+    expect(JSON.stringify(retrieved)).not.toContain("sourceCommit");
     const updateProposal = runCli(pluginRoot, dataDir, ["propose", "--path", projectBPath], {
       updates: [
         {
@@ -134,6 +161,19 @@ describe("Skill CLI", () => {
       updateItems[0]?.id ?? "",
     ]);
     expect(updated.updatedMemories).toHaveLength(1);
+    writeFileSync(path.join(projectAPath, "README.md"), "shared protocol changed\n");
+    const staleRecall = runCli(pluginRoot, dataDir, [
+      "recall",
+      "--path",
+      projectBPath,
+      "--query",
+      "shared protocol",
+    ]);
+    expect(
+      (staleRecall.candidates as Array<{ memoryId: string; stale: boolean }>).find(
+        (candidate) => candidate.memoryId === committedMemories[0]?.id,
+      )?.stale,
+    ).toBe(true);
     const graph = runCli(pluginRoot, dataDir, [
       "graph",
       "--path",

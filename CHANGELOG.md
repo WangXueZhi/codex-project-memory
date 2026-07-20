@@ -6,6 +6,16 @@ All notable changes to this project are documented in this file.
 
 ## Unreleased
 
+## 0.10.0 - 2026-07-20
+
+- Added deterministic, bilingual-friendly `recall` ranking with compact candidates and reviewed
+  one-hop relationship signals.
+- Added budgeted `get` deep reads that omit whole memories instead of truncating content.
+- Changed substantial-task startup to an estimated 800-token candidate pass plus a 1700-token deep
+  read, while preserving `load` and `search` compatibility.
+- Added stale, confidence, and authorized linked-project ranking controls without embeddings,
+  persistent indexes, query logging, or network access.
+- Repositioned the project as private, token-aware project memory in the English and Chinese docs.
 - Added public plugin-directory metadata, brand assets, and product screenshots.
 - Added bilingual privacy, terms, support, and reviewer submission documents.
 - Added direct GitHub marketplace installation instructions.

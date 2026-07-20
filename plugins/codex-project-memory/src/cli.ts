@@ -118,6 +118,9 @@ function help(): Record<string, unknown> {
       status: "status [--path PATH]",
       load: "load [--path PATH] [--limit N]",
       search: "search --query TEXT [--path PATH] [--include-linked true] [--limit N]",
+      recall:
+        "recall (--query TEXT|--recent true) [--path PATH] [--include-linked true] [--limit N] [--recommend N] [--budget-tokens N]",
+      get: "get --memory-ids ID,ID [--path PATH] [--include-linked true] [--budget-tokens N]",
       propose: "propose [--path PATH] [--json JSON|--json-file FILE|stdin]",
       commit:
         "commit --proposal-id ID [--accepted-item-ids ID,ID] [--accepted-update-ids ID,ID] [--accepted-relation-ids ID,ID]",
@@ -181,6 +184,23 @@ export function runCommand(argv: string[]): unknown {
             integerOption(args, "limit", 30),
           ),
         };
+      case "recall":
+        return service.recallMemory(
+          registeredProjectId(service, pathValue),
+          args.options.get("query") ?? null,
+          args.options.get("recent") === "true",
+          args.options.get("include-linked") === "true",
+          integerOption(args, "limit", 8),
+          integerOption(args, "recommend", 3),
+          integerOption(args, "budget-tokens", 800),
+        );
+      case "get":
+        return service.getMemoriesById(
+          registeredProjectId(service, pathValue),
+          listOption(args, "memory-ids"),
+          args.options.get("include-linked") === "true",
+          integerOption(args, "budget-tokens", 1700),
+        );
       case "propose": {
         const input = jsonInput(args) as
           | {

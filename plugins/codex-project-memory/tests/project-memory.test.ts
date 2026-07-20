@@ -54,6 +54,57 @@ describe("project identity", () => {
 });
 
 describe("review-first memory lifecycle", () => {
+  test("recalls only authorized linked memories and never audits query text", () => {
+    const context = createTestContext();
+    cleanups.push(context.cleanup);
+    const projectAPath = makeProject(context.root, "recall-source");
+    const projectBPath = makeProject(context.root, "recall-client");
+    const projectA = context.service.registerProject(projectAPath);
+    const projectB = context.service.registerProject(projectBPath);
+    const proposal = context.service.proposeMemory(projectA.id, [
+      {
+        kind: "decision",
+        title: "Shared checkout protocol",
+        summary: "The checkout protocol is reusable by authorized projects.",
+        topic: "Checkout",
+        content: "Use the shared checkout protocol for release verification.",
+        confidence: "verified",
+      },
+    ]) as { id: string; items: Array<{ id: string }> };
+    const sourceMemory = context.service.commitMemory(proposal.id, [proposal.items[0]?.id ?? ""])
+      .memories[0];
+    const auditPath = path.join(context.dataDir, "projects", projectB.id, "audit.jsonl");
+    const before = readFileSync(auditPath, "utf8");
+
+    expect(
+      context.service.recallMemory(projectB.id, "checkout protocol", false, true).candidates,
+    ).toEqual([]);
+    context.service.linkProjects(projectB.id, projectA.id);
+    const auditAfterLink = readFileSync(auditPath, "utf8");
+    const recalled = context.service.recallMemory(
+      projectB.id,
+      "private-query-checkout-protocol",
+      false,
+      true,
+    );
+    expect(recalled.recommendedMemoryIds).toContain(sourceMemory?.id);
+    expect(readFileSync(auditPath, "utf8")).toBe(auditAfterLink);
+    expect(readFileSync(auditPath, "utf8")).not.toContain("private-query-checkout-protocol");
+    expect(before).not.toBe(auditAfterLink);
+
+    expect(() =>
+      context.service.getMemoriesById(projectB.id, [sourceMemory?.id ?? ""], false),
+    ).toThrowError(/not accessible/);
+    expect(
+      context.service.getMemoriesById(projectB.id, [sourceMemory?.id ?? ""], true).memories[0]
+        ?.content,
+    ).toContain("shared checkout protocol");
+    context.service.unlinkProjects(projectB.id, projectA.id);
+    expect(
+      context.service.recallMemory(projectB.id, "checkout protocol", false, true).candidates,
+    ).toEqual([]);
+  });
+
   test("stores multiple citations and evaluates staleness per source", () => {
     const context = createTestContext();
     cleanups.push(context.cleanup);
@@ -198,6 +249,9 @@ describe("review-first memory lifecycle", () => {
       topic: null,
       citations: [],
     });
+    expect(
+      context.service.recallMemory(project.id, "Legacy content", false).candidates[0]?.summary,
+    ).toBe("Legacy content.");
     expect(readFileSync(memoryPath, "utf8")).toContain('"schemaVersion": 1');
 
     const proposal = context.service.proposeMemory(
@@ -241,6 +295,25 @@ describe("review-first memory lifecycle", () => {
     const stale = context.service.getContext(projectB.id)[0];
     expect(stale?.stale).toBe(true);
     expect(stale?.staleReason).toBe("source_file_changed");
+  });
+
+  test("enforces recall modes and command limits", () => {
+    const context = createTestContext();
+    cleanups.push(context.cleanup);
+    const project = context.service.registerProject(makeProject(context.root, "recall-limits"));
+    expect(() => context.service.recallMemory(project.id, null, false)).toThrowError(/exactly one/);
+    expect(() => context.service.recallMemory(project.id, "query", true)).toThrowError(
+      /exactly one/,
+    );
+    expect(() => context.service.recallMemory(project.id, "query", false, false, 21)).toThrowError(
+      /between 1 and 20/,
+    );
+    expect(() =>
+      context.service.recallMemory(project.id, "query", false, false, 8, 6),
+    ).toThrowError(/between 1 and 5/);
+    expect(() =>
+      context.service.recallMemory(project.id, "query", false, false, 8, 3, 16001),
+    ).toThrowError(/between 1 and 16000/);
   });
 
   test("rejects suspected secrets before creating a proposal", () => {

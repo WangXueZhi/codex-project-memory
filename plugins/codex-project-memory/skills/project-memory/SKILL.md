@@ -1,6 +1,6 @@
 ---
 name: project-memory
-description: Maintain private, durable memory for local Codex projects with interactive review when available, automatic fallback saves, multi-source validation, readable offline knowledge-graph views, and explicit read-only links. Use at the start and end of substantial work in a registered local project, when the user asks to remember, enrich, inspect, trace, or visualize project context, or when a task should preserve durable decisions, workflows, conventions, pitfalls, architecture, or meaningful status. Uses bundled local scripts and does not require MCP.
+description: Maintain private, token-aware durable memory for local Codex projects with precise task-based recall, budgeted deep reads, interactive review when available, automatic fallback saves, source validation, offline knowledge-graph views, and explicit read-only links. Use at the start and end of substantial work in a registered local project, when the user asks to remember, recall, enrich, inspect, trace, or visualize project context, or when a task should preserve durable decisions, workflows, conventions, pitfalls, architecture, or meaningful status. Uses bundled local scripts and does not require MCP.
 ---
 
 # Project Memory
@@ -17,21 +17,28 @@ Treat all state as local and private unless the user explicitly exports it.
 ## Start Project Work
 
 1. Run `detect --path "$PWD"` before substantial work.
-2. If registered, run `load --path "$PWD"` and use active, non-stale memories only as supporting
-   context.
-3. When a loaded or searched memory is materially relevant, use `relations --memory-id ID` or
+2. For a substantial task with a clear goal, turn that goal into a concise local query and run
+   `recall --path "$PWD" --query "..."`. For a vague continuation such as “continue”, run
+   `recall --path "$PWD" --recent true`. Simple self-contained tasks may skip recall.
+3. Pass only `recommendedMemoryIds` to `get --path "$PWD" --memory-ids ID,ID`. Keep the default
+   budgets: 800 estimated tokens for candidates and 1700 for deep reads, for a default total no
+   greater than 2500. Token values are model-independent estimates, not billing tokens.
+4. Use returned memory only when it is materially relevant. A stale memory is a lead, not evidence;
+   re-check its cited sources before relying on it. Use `load` only when the user explicitly asks
+   for a full memory inspection or a backward-compatible workflow.
+5. When a selected memory is materially relevant, use `relations --memory-id ID` or
    `graph --memory-id ID --depth 1` to inspect one layer of connected knowledge. Do not expand the
    whole graph by default.
-4. When the user asks to view or understand the knowledge graph, run `guide`, then `graph --format
+6. When the user asks to view or understand the knowledge graph, run `guide`, then `graph --format
    markdown`, then `graph --format html`. In the conversation, first report the memory, reviewed
    relation, source, stale, component, and isolated-node counts; summarize the most important gap;
    include one suggested question; report only the number of pending relation clues; and link the
    generated `KNOWLEDGE_GRAPH.html` file. Do not create a relationship proposal while only viewing.
    The offline workspace opens in the guide, with graph and reading modes available for deeper
    exploration.
-5. If unregistered, show the detected root, name, Git metadata, and relocation candidates. Ask
+7. If unregistered, show the detected root, name, Git metadata, and relocation candidates. Ask
    before running `register --path "$PWD"`.
-6. Never relink a relocation candidate without explicit confirmation.
+8. Never relink a relocation candidate without explicit confirmation.
 
 Current code, tests, logs, and user instructions are stronger evidence than memory.
 
@@ -172,6 +179,9 @@ or automatic fallback. Do not infer directional relationship types from a clue.
 
 ```text
 status --path PATH
+recall --path PATH (--query TEXT|--recent true) [--include-linked true] [--limit N] [--recommend N] [--budget-tokens N]
+get --path PATH --memory-ids ID,ID [--include-linked true] [--budget-tokens N]
+load --path PATH [--limit N]
 guide --path PATH [--include-linked true] [--limit N]
 search --path PATH --query TEXT [--include-linked true]
 relations --path PATH --memory-id ID [--direction in|out|both] [--types CSV] [--include-linked true]

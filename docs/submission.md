@@ -10,10 +10,11 @@ network service at runtime.
 
 - **Name:** Codex Project Memory
 - **Category:** Productivity
-- **Short description:** Private, traceable long-term memory for each Codex project.
-- **Long description:** Keep project decisions, verified conclusions, workflows, and evidence in a
-  private local store outside Git. Review what is saved, detect stale source files, allow explicit
-  one-way cross-project reads, and explore knowledge through a guide-first offline workspace.
+- **Short description:** Private, token-aware memory with precise recall for Codex projects.
+- **Long description:** Precisely recall reviewed project decisions, conclusions, workflows, and
+  evidence without loading every memory into context. Retrieval stays local and within a clear
+  token budget, while review, source validation, one-way links, and the offline guide keep memory
+  traceable and controlled.
 - **Website:** https://github.com/WangXueZhi/codex-project-memory
 - **Support:** https://github.com/WangXueZhi/codex-project-memory/issues
 - **Privacy:** https://github.com/WangXueZhi/codex-project-memory/blob/main/PRIVACY.md
@@ -41,7 +42,7 @@ This project consumes the shared release rules from project A.
 
 Use an isolated `CODEX_PROJECT_MEMORY_HOME` so the tests do not affect existing memories.
 
-## Five Positive Test Cases
+## Six Positive Test Cases
 
 ### 1. Detect Without Silent Registration
 
@@ -69,7 +70,16 @@ Use an isolated `CODEX_PROJECT_MEMORY_HOME` so the tests do not affect existing 
   final response contains a valid commit receipt.
 - **Fixture:** `memory-review-a` is registered and contains the reviewer README.
 
-### 4. Generate The Knowledge Guide
+### 4. Recall Within A Token Budget
+
+- **Prompt:** Recall the release workflow for this task without loading every saved memory.
+- **Expected behavior:** The Skill runs `recall` first, then passes only recommended IDs to `get`.
+- **Expected result:** Candidate output contains summaries and estimated token counts but no full
+  content or full citations. The deep read stays within its budget and returns the complete selected
+  memory without truncation.
+- **Fixture:** Continue from positive test 3 and add several unrelated synthetic memories.
+
+### 5. Generate The Knowledge Guide
 
 - **Prompt:** Show me this project's knowledge graph and explain what I should read first.
 - **Expected behavior:** The Skill runs `guide`, Markdown graph output, and HTML graph output without
@@ -78,7 +88,7 @@ Use an isolated `CODEX_PROJECT_MEMORY_HOME` so the tests do not affect existing 
   `KNOWLEDGE_GRAPH.html` path. The HTML opens in guide mode and makes no network request.
 - **Fixture:** Continue from positive test 3.
 
-### 5. Approve A One-Way Cross-Project Read
+### 6. Approve A One-Way Cross-Project Read
 
 - **Prompt:** Register project B, then allow project B to read project A. From B, find the shared
   release rule in A without changing A.
@@ -116,11 +126,12 @@ Use an isolated `CODEX_PROJECT_MEMORY_HOME` so the tests do not affect existing 
 
 ## Initial Release Notes
 
-Initial public submission of a local, skills-only Codex plugin for durable project memory. The
-plugin stores approved memories outside repositories as inspectable Markdown, validates multiple
-local source citations, reports stale evidence, supports explicit one-way project links, and
-provides a guide-first offline knowledge graph. It contains no MCP server, SQLite database,
-telemetry, cloud service, or runtime network access.
+Local, skills-only Codex plugin for private, token-aware project memory. It precisely recalls
+reviewed knowledge through compact candidates and budgeted deep reads, stores approved memories
+outside repositories as inspectable Markdown, validates local citations, reports stale evidence,
+supports explicit one-way project links, and provides a guide-first offline knowledge graph. It
+contains no MCP server, SQLite database, embeddings, telemetry, cloud service, or runtime network
+access.
 
 ## Manual Portal Decisions
 

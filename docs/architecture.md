@@ -4,7 +4,7 @@ English | [简体中文](architecture.zh-CN.md)
 
 This document explains how the plugin works internally. The short version is:
 
-1. The **Skill** tells Codex when to load memory and how to ask about saving it.
+1. The **Skill** tells Codex when to recall memory within a token budget and how to ask about saving it.
 2. The **CLI** reads and writes the local files and enforces access rules.
 3. The **Stop Hook** checks that a finished task did not leave a save proposal unresolved.
 4. The **offline browser** turns saved memories into a guide, graph, and reading view.
@@ -45,6 +45,27 @@ follows the user's choice. Proposals can create memories, enrich an existing loc
 summary/topic/citations, and create relationships. When structured input is unavailable, the Skill
 commits every proposal item as an explicit automatic fallback. Search reads the Markdown files
 directly and does not maintain a database index.
+
+## Token-Aware Retrieval
+
+Normal task startup uses two explicit, read-only stages. `recall` ranks the current project's
+memories in memory and returns compact candidates without full content or full citations. It uses
+weighted BM25-style lexical signals across title, summary, topic, tags, content, and citation
+metadata. Chinese runs contribute phrases and overlapping two-character fragments; English,
+numbers, and paths contribute normalized word tokens. Confidence, staleness, linked-project scope,
+and reviewed one-hop relations apply bounded deterministic multipliers. Display-only relation
+clues never affect retrieval.
+
+`get` then reads only the recommended IDs and returns full content with compact citation fields.
+The default planning budget is 800 estimated tokens for `recall` plus 1700 for `get`. Ten percent
+of each command budget is reserved for the JSON envelope. A memory that does not fit is omitted
+whole rather than truncating its content. Estimates use a model-independent CJK/non-CJK character
+approximation and are not billing tokens or exact model tokenizer output.
+
+Both commands read `MEMORY.md` and `RELATIONS.json` directly, build no persistent index, make no
+network request, and do not write queries to proposals or audit logs. Linked-project memories enter
+the candidate set only while an explicit read link exists. `load` and `search` remain available and
+unchanged for compatibility and explicit full inspection.
 
 ## Knowledge Graph
 

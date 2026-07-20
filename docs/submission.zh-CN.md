@@ -9,10 +9,10 @@
 
 - **名称：** Codex Project Memory
 - **分类：** Productivity
-- **简短说明：** 为每个 Codex 项目保存私有、可追溯的长期记忆。
-- **详细说明：** 在 Git 之外的私人本地目录保存项目决策、已验证结论、流程和证据。用户可以
-  审核保存内容、发现已经变化的来源文件、建立明确的单向跨项目只读链接，并通过知识导览优先
-  的离线工作台理解项目知识。
+- **简短说明：** 为 Codex 项目提供私有、Token-aware 的精准记忆召回。
+- **详细说明：** 不把全部记忆塞进上下文，而是按明确 token 预算精准找回审核过的项目决策、
+  结论、流程和证据。召回完全在本机完成；保存审核、来源校验、单向链接和离线知识导览让记忆
+  保持可追溯、可控制。
 - **网站：** https://github.com/WangXueZhi/codex-project-memory
 - **支持：** https://github.com/WangXueZhi/codex-project-memory/issues
 - **隐私政策：** https://github.com/WangXueZhi/codex-project-memory/blob/main/PRIVACY.zh-CN.md
@@ -40,7 +40,7 @@ This project consumes the shared release rules from project A.
 
 使用独立的 `CODEX_PROJECT_MEMORY_HOME`，避免审核测试影响现有记忆。
 
-## 五个正向测试
+## 六个正向测试
 
 ### 1. 检测项目但不静默注册
 
@@ -65,7 +65,15 @@ This project consumes the shared release rules from project A.
 - **预期结果：** `MEMORY.md` 包含一条正式记忆，来源状态有效，最终回复包含合法提交回执。
 - **测试数据：** `memory-review-a` 已注册，并包含审核用 README。
 
-### 4. 生成知识导览
+### 4. 按 token 预算精准召回
+
+- **提示：** 找回这次任务需要的发布流程，不要加载所有已保存记忆。
+- **预期行为：** Skill 先运行 `recall`，再只把推荐 ID 传给 `get`。
+- **预期结果：** 候选结果只有摘要和估算 token，不包含完整正文或完整引用；深读不超过预算，
+  并完整返回选中的记忆，不截断正文。
+- **测试数据：** 在正向测试 3 后继续，并添加几条无关的公开合成记忆。
+
+### 5. 生成知识导览
 
 - **提示：** 查看当前项目的知识图谱，并告诉我应该先读什么。
 - **预期行为：** Skill 依次运行 `guide`、Markdown 图谱和 HTML 图谱，不创建关系 proposal。
@@ -73,7 +81,7 @@ This project consumes the shared release rules from project A.
   默认进入导览，而且不发出网络请求。
 - **测试数据：** 在正向测试 3 后继续。
 
-### 5. 批准单向跨项目读取
+### 6. 批准单向跨项目读取
 
 - **提示：** 注册项目 B，然后允许项目 B 读取项目 A。从 B 查找 A 中的发布规则，但不要修改 A。
 - **预期行为：** 两个项目都必须得到明确批准才注册。Skill 只建立 `B -> A` 只读链接，并
@@ -107,10 +115,10 @@ This project consumes the shared release rules from project A.
 
 ## 首次发布说明
 
-首次公开提交本地、纯 Skill 的 Codex 项目记忆插件。插件把审核通过的记忆以可检查 Markdown
-保存在项目仓库之外，可以校验多个本地来源、报告过期证据、建立明确的单向项目链接，并提供
-知识导览优先的离线知识图谱。插件不包含 MCP 服务器、SQLite、遥测、云端服务或运行时网络
-访问。
+本地、纯 Skill 的 Codex 私有 Token-aware 项目记忆插件。它通过紧凑候选和按预算深读精准
+找回审核过的知识，把正式记忆以可检查 Markdown 保存在项目仓库之外，可以校验本地来源、
+报告过期证据、建立明确的单向项目链接，并提供知识导览优先的离线知识图谱。插件不包含 MCP
+服务器、SQLite、embeddings、遥测、云端服务或运行时网络访问。
 
 ## 必须由发布者确认的项目
 

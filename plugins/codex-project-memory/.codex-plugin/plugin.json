@@ -1,7 +1,7 @@
 {
   "name": "codex-project-memory",
-  "version": "0.9.0+codex.20260715094444",
-  "description": "Local project memory with structured review, source citations, and a guide-first offline knowledge graph.",
+  "version": "0.10.0+codex.20260720085510",
+  "description": "Private, token-aware project memory with precise local recall, reviewable saves, source citations, and an offline knowledge graph.",
   "author": {
     "name": "WangXueZhi",
     "url": "https://github.com/WangXueZhi"
@@ -13,14 +13,16 @@
     "memory",
     "projects",
     "context",
+    "recall",
+    "token-aware",
     "knowledge-graph",
     "skill"
   ],
   "skills": "./skills/",
   "interface": {
     "displayName": "Codex Project Memory",
-    "shortDescription": "Private, traceable long-term memory for each Codex project.",
-    "longDescription": "Keep project decisions, verified conclusions, workflows, and evidence in a private local store outside Git. Review what is saved, detect stale source files, allow explicit one-way cross-project reads, and explore knowledge through a guide-first offline workspace.",
+    "shortDescription": "Private, token-aware memory with precise recall for Codex projects.",
+    "longDescription": "Precisely recall reviewed project decisions, conclusions, workflows, and evidence without loading every memory into context. Retrieval stays local and works within a clear token budget, while source validation, explicit save review, one-way project links, and the offline knowledge guide keep memory traceable and controlled.",
     "developerName": "WangXueZhi",
     "category": "Productivity",
     "capabilities": [
@@ -32,7 +34,7 @@
     "privacyPolicyURL": "https://github.com/WangXueZhi/codex-project-memory/blob/main/PRIVACY.md",
     "termsOfServiceURL": "https://github.com/WangXueZhi/codex-project-memory/blob/main/TERMS.md",
     "defaultPrompt": [
-      "Load this project's saved memory and flag anything stale.",
+      "Recall only the project memories relevant to this task within the default token budget.",
       "Propose durable memories from the work we just finished.",
       "Guide me through this project's saved knowledge and evidence."
     ],

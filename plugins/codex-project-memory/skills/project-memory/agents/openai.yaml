@@ -1,6 +1,6 @@
 interface:
   display_name: "Project Memory"
-  short_description: "Maintain traceable memory and guide users through offline project knowledge"
-  default_prompt: "Use $project-memory to load this project's durable context, summarize knowledge gaps, and open its guided offline knowledge graph when useful."
+  short_description: "Recall traceable project knowledge within a clear token budget"
+  default_prompt: "Use $project-memory to recall only the project knowledge relevant to this task, then deep-read the recommended memories within budget."
 policy:
   allow_implicit_invocation: true

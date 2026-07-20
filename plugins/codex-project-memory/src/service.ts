@@ -4,6 +4,7 @@ import { ProjectMemoryError } from "./errors.js";
 import { detectGitMetadata, type GitMetadata } from "./git.js";
 import { analyzeKnowledgeGraph } from "./guide.js";
 import { loadLocalConfig } from "./paths.js";
+import { buildGetResult, buildRecallResult } from "./retrieval.js";
 import { assertNoSecret, readProjectFile, searchProjectFiles } from "./security.js";
 import type {
   MemoryStore,
@@ -16,6 +17,7 @@ import type {
 import {
   CITATION_ROLES,
   type DetectedProject,
+  type GetMemoriesResult,
   type GraphGuide,
   MEMORY_KINDS,
   type MemoryCandidate,
@@ -27,6 +29,7 @@ import {
   type MemoryUpdateCandidate,
   type ProjectRecord,
   RELATION_TYPES,
+  type RecallResult,
   type RelationDirection,
   type RelationType,
   type RelationView,
@@ -49,6 +52,10 @@ const MAX_RELATION_RATIONALE_LENGTH = 1000;
 const MAX_GRAPH_NODES = 100;
 const MAX_GRAPH_DEPTH = 5;
 const MAX_PATH_DEPTH = 8;
+const MAX_RECALL_LIMIT = 20;
+const MAX_RECALL_RECOMMEND = 5;
+const MAX_RETRIEVAL_BUDGET = 16000;
+const MAX_GET_MEMORY_IDS = 20;
 
 const SYMMETRIC_RELATION_TYPES = new Set<RelationType>(["related_to", "contradicts"]);
 const RELATION_LABELS: Record<RelationType, string> = {
@@ -290,6 +297,101 @@ export class ProjectMemoryService {
     return this.store
       .searchMemories(projectIds, query, limit)
       .map((memory) => this.enrichStaleness(memory));
+  }
+
+  recallMemory(
+    projectId: string,
+    query: string | null,
+    recent: boolean,
+    includeLinked = false,
+    limit = 8,
+    recommend = 3,
+    budgetTokens = 800,
+  ): RecallResult {
+    this.store.requireProject(projectId);
+    const normalizedQuery = query?.trim() ?? "";
+    if (recent === Boolean(normalizedQuery)) {
+      throw new ProjectMemoryError(
+        "INVALID_INPUT",
+        "Recall requires exactly one of --query TEXT or --recent true.",
+      );
+    }
+    if (!Number.isInteger(limit) || limit < 1 || limit > MAX_RECALL_LIMIT) {
+      throw new ProjectMemoryError(
+        "INVALID_INPUT",
+        `Recall limit must be between 1 and ${MAX_RECALL_LIMIT}.`,
+      );
+    }
+    if (!Number.isInteger(recommend) || recommend < 1 || recommend > MAX_RECALL_RECOMMEND) {
+      throw new ProjectMemoryError(
+        "INVALID_INPUT",
+        `Recall recommendation count must be between 1 and ${MAX_RECALL_RECOMMEND}.`,
+      );
+    }
+    this.validateRetrievalBudget(budgetTokens);
+    const projectIds = [projectId];
+    if (includeLinked) {
+      projectIds.push(...this.store.listLinks(projectId).map((project) => project.id));
+    }
+    const memories = projectIds
+      .flatMap((visibleProjectId) => this.store.getContext(visibleProjectId, 1000))
+      .map((memory) => this.enrichStaleness(memory));
+    return buildRecallResult({
+      currentProjectId: projectId,
+      memories,
+      relations: this.visibleRelations(projectId, includeLinked),
+      mode: recent ? "recent" : "query",
+      query: recent ? null : normalizedQuery,
+      limit,
+      recommend,
+      budgetTokens,
+    });
+  }
+
+  getMemoriesById(
+    projectId: string,
+    memoryIds: string[],
+    includeLinked = false,
+    budgetTokens = 1700,
+  ): GetMemoriesResult {
+    this.store.requireProject(projectId);
+    this.validateRetrievalBudget(budgetTokens);
+    const uniqueIds = [...new Set(memoryIds.map((id) => id.trim()).filter(Boolean))];
+    if (uniqueIds.length === 0 || uniqueIds.length > MAX_GET_MEMORY_IDS) {
+      throw new ProjectMemoryError(
+        "INVALID_INPUT",
+        `Get requires between 1 and ${MAX_GET_MEMORY_IDS} unique memory IDs.`,
+      );
+    }
+    const memories = uniqueIds.map((memoryId) => {
+      const memory = this.store.getMemory(memoryId);
+      const accessible =
+        memory &&
+        (memory.projectId === projectId ||
+          (includeLinked && this.store.hasReadAccess(projectId, memory.projectId)));
+      if (!memory || !accessible) {
+        throw new ProjectMemoryError(
+          "INVALID_INPUT",
+          "Memory does not exist or is not accessible from this project.",
+          { memoryId },
+        );
+      }
+      return this.enrichStaleness(memory);
+    });
+    return buildGetResult(memories, budgetTokens);
+  }
+
+  private validateRetrievalBudget(budgetTokens: number): void {
+    if (
+      !Number.isInteger(budgetTokens) ||
+      budgetTokens < 1 ||
+      budgetTokens > MAX_RETRIEVAL_BUDGET
+    ) {
+      throw new ProjectMemoryError(
+        "INVALID_INPUT",
+        `Retrieval budget must be between 1 and ${MAX_RETRIEVAL_BUDGET} estimated tokens.`,
+      );
+    }
   }
 
   private prepareCitations(
@@ -927,7 +1029,7 @@ export class ProjectMemoryService {
       beginMarker: "<!-- codex-project-memory:start -->",
       endMarker: "<!-- codex-project-memory:end -->",
       markdown: `<!-- codex-project-memory:start -->
-Use the installed $project-memory Skill before substantial work: run its bundled script to detect the current project and load saved context. Before finishing a tool-using task, resolve the memory proposal and include the required Project memory receipt. Use structured request_user_input choices when available. When request_user_input is unavailable, automatically commit all proposed memory and relation items and disclose the automatic fallback. Treat linked projects as read-only references.
+Use the installed $project-memory Skill before substantial work: detect the current project, recall compact task-relevant candidates, and get only the recommended memories within the default token budget. Use load only for explicit full inspection. Before finishing a tool-using task, resolve the memory proposal and include the required Project memory receipt. Use structured request_user_input choices when available. When request_user_input is unavailable, automatically commit all proposed memory and relation items and disclose the automatic fallback. Treat linked projects as read-only references.
 <!-- codex-project-memory:end -->`,
     };
   }
